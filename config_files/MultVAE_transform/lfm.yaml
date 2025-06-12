@@ -1,0 +1,77 @@
+
+model_class : MaskMultVAE
+model_config:
+  encoder_dims: [] # VAE [n_items] + encoder_dims + [2*latent_size] 
+  decoder_dims: [] # VAE [latent_size]+ decoder_dims + [n_item] 
+  latent_size : 100
+  input_dropout: 0.1
+  decoder_dropout: 0.0
+  anneal_cap: 0.8 # beta parameter 
+  total_anneal_steps: 0 # set this value to 0 for constant beta parameter
+  l1_weight_decay: ~
+  pretrained: 'pretrained/lfm/'  
+  use_mask: True
+  mask_hidden_dim: 100
+  adv_warmup: 0
+
+  adversary_config:
+    # the list of features should be the same declared in dataset_config.user_features
+    - feature: "gender" 
+      dims: [5] # Adversary [latent] + adv_module_dims + [feature_num_categories]
+      grad_scaling: 0
+      input_dropout: 0.3
+      n_parallel: 5
+      loss: ce
+
+
+dataset_config: 
+  dataset: lfm-demobias
+  dataset_type: multi_hot ## TODO
+  user_features:
+    - name: "gender"
+      type: "categorical"
+
+
+trainer:
+  n_epochs: 50 # 100
+  metrics_top_k: [ 10 , 20, 50, 100 ]
+  eval_metrics :  [ "ndcg", "recall", "coverage"]
+  store_last_model: true
+
+  dataloader:
+    batch_size: 128
+    eval_batch_size : 512
+    n_workers: 0
+    shuffle_train: True
+
+  optimizer: 'adam' 
+  optimizer_config: 
+    lr: 1e-3
+    weight_decay: 1e-4
+
+  adv_optimizer_config:
+    lr: 1e-3
+    weight_decay: 1e-4
+    
+  scheduler:
+    mode: 'min'
+    factor: 0.1
+    patience: 5
+    min_lr: 1e-6
+  
+  early_stopping_criteria:
+    utility:
+      metric: "ndcg@10"
+      highest_is_best: true
+      warmup: false
+      patience: 1000 # 100
+
+  store_model_every: 1000
+
+
+logging:
+  log_every_n_batches: 100
+random_state: 42
+
+  
+

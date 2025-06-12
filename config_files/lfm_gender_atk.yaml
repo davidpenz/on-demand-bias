@@ -1,0 +1,58 @@
+
+model_class: VaeEmbeddingAttacker  
+model_config:
+  feature: gender
+  dims: [5] # [embedding_size]+ dims + [n_classes]
+  embedding_size: 64
+  n_parallel: 1
+  input_dropout: 0.5
+  loss: ce  
+
+    
+dataset_config: 
+  dataset: lfm-demobias
+  dataset_type: multi_hot # TODO
+  user_features:
+    - name: "gender"
+      type: "categorical" 
+
+
+trainer:
+  n_epochs: 50
+  eval_metrics:  ["bacc","acc"]
+  store_last_model: true
+
+  dataloader:
+    batch_size: 64
+    eval_batch_size : 512
+    n_workers: 1
+    shuffle_train: False
+
+  optimizer: 'adam' 
+  optimizer_config: 
+    lr: 1e-3
+    weight_decay: 1e-4
+    
+  scheduler:
+    mode: 'min'
+    factor: 0.1
+    patience: 5
+    min_lr: 1e-6
+  
+  early_stopping_criteria:
+    utility:
+      metric: "bacc" 
+      highest_is_best: true
+      warmup: false
+      patience: 10
+
+  store_model_every: 1000
+
+
+
+logging:
+  log_every_n_batches: 100
+random_state: 42
+
+  
+
